@@ -15,6 +15,9 @@ $baseURI = 'https://canary.graph.microsoft.com/testidentityprotectionservices/co
 
 
 function Get-CAPolicy{
+    ## This function aceepts a valid Policy ID from the tenant
+    ## It will return the JSON file for the Policy
+
         Param(
             [Parameter(mandatory=$true)]
             [string]$PolicyID
@@ -28,6 +31,8 @@ function Get-CAPolicy{
 }
 
 function Start-CAPolicyBackup{
+    ## This function will backup all the polcies to a JSON file
+    
         Param(
             [Parameter(mandatory=$true)]
             [string]$ExportFileName
@@ -165,7 +170,9 @@ function Set-CAPolicy{
             [String[]]$includeGroups,
             [String[]]$excludeGroups,
             [String[]]$includeRoles,
-            [String[]]$excludeRoles
+            [String[]]$excludeRoles,
+            [ValidateSet("Block","Mfa","CompliantDevice","DomainJoinedDevice","ApprovedApplication","CompliantApplication","FederatedMfa","FederatedCertAuth")][String[]]$accessGrantControls,
+            [ValidateSet("AND","OR")][String]$accessGrantControlOperator
 
         )
 
@@ -197,7 +204,6 @@ function Set-CAPolicy{
         ## ConvertFrom-Json / Convertto-Json cannot handle multiple level values correctly PS 5.1
         ## Process Individual complex types seperately
         $conditionsSectionPolicy       = Get-CAPolicySection -SectionName conditions -PolicyJSON $PolicyJSON
-        $conditionsSectionPolicy 
         $conditionsSectionPolicyObject = $conditionsSectionPolicy | ConvertFrom-Json 
         
         ##DeviceStates
@@ -208,11 +214,10 @@ function Set-CAPolicy{
         }
         if($excludeDeviceStates.length -ne 0)
         {
-        $excludeDeviceStates
+        
             $conditionsSectionPolicyObject.deviceStates.excludeStates= $excludeDeviceStates
         }
-
-
+        
 
         ##Locations
         ########################################################################################
@@ -227,7 +232,7 @@ function Set-CAPolicy{
 
         ##Times
         ########################################################################################
-
+        ## For future use
 
 
         ## SignInRiskLevel
@@ -248,16 +253,15 @@ function Set-CAPolicy{
         ## Platforms
         ## Future use case on not-configured.
         ########################################################################################
-
         if($includePlatforms.length -ne 0)
         {
             
-            $conditionsSectionPolicyObject.platforms.includePlatforms       = $includePlatforms
+            $conditionsSectionPolicyObject.platforms.includePlatforms = $includePlatforms
                      
         }
         if($excludePlatforms.length -ne 0)
         {
-            $conditionsSectionPolicyObject.platforms.excludePlatforms       = $excludePlatforms
+            $conditionsSectionPolicyObject.platforms.excludePlatforms = $excludePlatforms
             
         }
         
@@ -265,11 +269,12 @@ function Set-CAPolicy{
         ########################################################################################
         if($includeUsers.length -ne 0)
         {
-           $conditionsSectionPolicyObject.users.includeRoles=  $includeUsers       
+                
+           $conditionsSectionPolicyObject.users.includeUsers   =  $includeUsers       
         }
         if($excludeUsers.length -ne 0)
         {
-            $conditionsSectionPolicyObject.users.excludeUsers = $excludeUsers
+            $conditionsSectionPolicyObject.users.excludeUsers  = $excludeUsers
         }
         if($includeGroups.length -ne 0)
         {
@@ -281,24 +286,65 @@ function Set-CAPolicy{
         }
         if($includeRoles.length -ne 0)
         {
-            $conditionsSectionPolicyObject.users.includeRoles = $includeRoles
+            $conditionsSectionPolicyObject.users.includeRoles  = $includeRoles
         }
         if($excludeRoles.length -ne 0)
         {
-            $conditionsSectionPolicyObject.users.excludeRoles = $excludeRoles
+            $conditionsSectionPolicyObject.users.excludeRoles  = $excludeRoles
         }
 
 
-        $conditionsSectionPolicyObject 
-        $conditionsSectionPolicyObject | ConvertTo-Json | Out-File "c:\temp\set3.json"
+
+
+        
+        ########################################################################################
+        ##
+        ## grantControls
+        ## ConvertFrom-Json / Convertto-Json cannot handle multiple level values correctly PS 5.1
+        ## Process Individual complex types seperately
+        ########################################################################################
+        $grantControlsSectionPolicy       = Get-CAPolicySection -SectionName grantControls -PolicyJSON $PolicyJSON
+        $grantControlsSectionPolicyObject = $grantControlsSectionPolicy   | ConvertFrom-Json 
+
+        
+        ## accessGrantControls
+        if($accessGrantControls.length -ne 0)
+        {
+            $grantControlsSectionPolicyObject.builtInControls = $accessGrantControls
+        }
+        
+        ## Operator
+        if($accessGrantControlOperator.length -ne 0)
+        {
+            $grantControlsSectionPolicyObject.operator = $accessGrantControlOperator
+        }
+
+        
+        #$grantControlsSectionPolicyObject
+        $grantControlsSectionPolicyObject | ConvertTo-Json | Out-File "c:\temp\grantControls.json"
+        #$conditionsSectionPolicyObject 
+        $conditionsSectionPolicyObject | ConvertTo-Json | Out-File "c:\temp\conditions.json"
+
+        ##See Problem with Powershell Function
+        $PolicyJSONObject  | ConvertTo-Json | Out-File "c:\temp\Original.json"
+
+
+
+
+        ## ConvertFrom-Json / Convertto-Json cannot handle multiple level values correctly PS 5.1
+        ## Process Individual complex types seperately
+        #$conditionsSectionPolicy       = Get-CAPolicySection -SectionName conditions -PolicyJSON $PolicyJSON
+        #$conditionsSectionPolicyObject = $conditionsSectionPolicy | ConvertFrom-Json 
+
 
  }
 
  Set-CAPolicy -PolicyID cb015840-1572-4ad2-853a-f2aa3bb648df -DisplayName "Tutor" `
  -excludeLocations none,wastech -includeLocations NALL -includeDeviceStates All  -excludeDeviceStates DomainJoined , Compliant `
  -State Disabled -signInRiskLevels High,Low -ClientAppsTypes Browser,EasUnsupported -includePlatforms Android,ios -excludePlatforms windows `
- -includeUsers "user1" ,"user2" -excludeUsers "user3","user4" -includeGroups "group1", "group2" -excludeGroups "exgroup1","exgroup2" -includeRoles "role1","role2" -excludeRoles "exrol1", "exrole2" 
- 
+ -includeUsers "user1" ,"user2" -excludeUsers "user3","user4" -includeGroups "group1", "group2" -excludeGroups "exgroup1","exgroup2" -includeRoles "role1","role2" -excludeRoles "exrol1", "exrole2" `
+ -accessGrantControls CompliantApplication,mfa -accessGrantControlOperator OR
+  
 
 
         
