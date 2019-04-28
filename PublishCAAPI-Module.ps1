@@ -146,6 +146,7 @@ function Get-CAPolicySection{
 }
 
 function Set-CAPolicy{
+
         Param(
             [Parameter(mandatory=$true)]
             [string]$PolicyID,
@@ -168,10 +169,13 @@ function Set-CAPolicy{
 
         )
 
-        $lenr=$includeLocations.length
-        write-host "IncludeLocation = ($lenr)"
-        
+                        
         #Used below     
+        ## Item1 : Later need to get clean JSON Template
+        ## Item2 : Plug the values in the template from the exisiting policy
+        ## Item3 : Modify the values against Item2  Json
+        ## Item4 : Stich the JSON together
+
         $PolicyJSON = Get-CAPolicy -PolicyID $PolicyID 
         $PolicyJSONObject = $PolicyJSON  |  ConvertFrom-Json 
 
@@ -297,59 +301,14 @@ function Set-CAPolicy{
  
 
 
- 
- 
         
-   
-
-
-
-        #$PolicyJSON = Get-CAPolicy -PolicyID e2856a3d-a9fd-4202-9fbe-e838dc91bd8c
-        #$PolicyJSONObject = $PolicyJSON  |  ConvertFrom-Json 
-        #$PolicyJSONObject | ConvertTo-Json | Out-File "c:\temp\set.json"
-        #$PolicyJSONObject.conditions.signInRiskLevels ="High","Low"
-        #$PolicyJSONObject
-        #$PolicyJSONObject | ConvertTo-Json | Out-File "c:\temp\set.json"
-        #$PolicyJSONObject.conditions.users.includeUsers
 
 
 #===============================
 #Get-CAPolicy
 #New-CAPolicy
-Start-CAPolicyBackup -ExportFileName C:\temp\all.json
+#Start-CAPolicyBackup -ExportFileName C:\temp\all.json
 #Start-CAPolicyRestore
 #===============================
-
-
-
-
-
-
-#Get-CAPolicy -PolicyID e2856a3d-a9fd-4202-9fbe-e838dc91bd8c
-#Start-CAPolicyRestore -PolicyBackupFile C:\temp\g2.json -State Disabled
-#Start-CAPolicyBackup -ExportFileName c:\temp\g2.json
-
-#$Abc = Get-ConditionalAccessPolicy  
-#$abc.value.grantControls
-#$abc.value.grantControls.builtinControls
-
-function Set-ConditionalAccessPolicy{
- Param(
-        [string]$PolicyID,
-        [ValidateSet("Block","Mfa","CompliantDevice","DomainJoinedDevice","ApprovedApplication","CompliantApplication","FederatedMfa","FederatedCertAuth")][String]$AccessGrantControl,
-        [ValidateSet("applicationEnforcedRestrictions","cloudAppSecurity","signInFrequency","persistentBrowser")][String]$SessionControls,
-        [ValidateSet("McasConfigured","MonitorOnly","BlockDownloads","ProtectDownloads")][String]$applicationEnforcedRestrictionsSessionControl,
-        [ValidateSet("Days","Hours")][String]$signInFrequencySessionControl,
-        [ValidateSet("always","never")][String]$persistentBrowserSessionMode,
-        [ValidateSet("includeApplications","excludeApplications","includeAuthenticationContext")][String]$AccessApplications,
-        [ValidateSet("Browser","Modern","EasSupported","EasUnsupported","Other")][String]$ClientApps,
-        [ValidateSet("includeStates","excludeStates")][String]$DeviceStates,
-        [ValidateSet("Compliant","DomainJoined")][String]$excludeStates,
-        [ValidateSet("All","Android","Ios","Windows","WindowsPhone","MacOs")][String]$AccessPlatforms
-
-        )
-
-}
-
 
 
