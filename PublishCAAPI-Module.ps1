@@ -30,6 +30,250 @@ function Get-CAPolicy{
     return $PolicyJSON
 }
 
+
+#https://docs.microsoft.com/en-us/azure/active-directory/conditional-access/technical-reference
+$ApplicatioNameHashTable = @{
+        'Azure Analysis Services'="00000002-0000-0ff1-ce00-000000000002";
+        'Azure DevOps'="00000002-0000-0ff1-ce00-000000000002";
+        'Azure SQL Database and Data Warehouse - Learn more'="00000002-0000-0ff1-ce00-000000000002";
+        'Dynamics CRM Online'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Application Insights Analytics'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Azure Management'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Azure RemoteApp'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Azure Subscription Management'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Cloud App Security'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Commerce Tools Access Control Portal'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Commerce Tools Authentication Service'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Flow'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Forms'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Intune'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Intune Enrollment'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Planner'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Power BI'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft PowerApps'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Search in Bing'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft StaffHub'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Stream'="00000002-0000-0ff1-ce00-000000000002";
+        'Microsoft Teams'="00000002-0000-0ff1-ce00-000000000002";
+        'Office 365 Exchange Online'="00000002-0000-0ff1-ce00-000000000000"
+        'Office 365 SharePoint Online'="00000003-0000-0ff1-ce00-000000000000";
+        'Office 365 Yammer'="00000002-0000-0ff1-ce00-000000000002";
+        'Office Delve'="00000002-0000-0ff1-ce00-000000000002";
+        'Office Sway'="00000002-0000-0ff1-ce00-000000000002";
+        'Outlook Groups'="00000002-0000-0ff1-ce00-000000000002";
+        'Project Online'="00000002-0000-0ff1-ce00-000000000002";
+        'Skype for Business Online'="00000002-0000-0ff1-ce00-000000000002";
+        'Virtual Private Network (VPN)'="00000002-0000-0ff1-ce00-000000000002";
+        'Visual Studio App Center'="00000002-0000-0ff1-ce00-000000000002";
+        'Windows Defender ATP'="00000002-0000-0ff1-ce00-000000000002"}
+
+function Get-CAPolicyV2{
+    ## This function will backup all the polcies to a JSON file
+    
+        Param(
+            [Parameter(Mandatory=$true)]
+            [ValidateSet('ApplicationID', 'ApplicationName', 'PolicyID','Platform')]
+            [string]$Type,
+            [ValidateSet('Azure Analysis Services',
+                            'Azure DevOps',
+                            'Azure SQL Database and Data Warehouse - Learn more',
+                            'Dynamics CRM Online',
+                            'Microsoft Application Insights Analytics',
+                            'Microsoft Azure Management',
+                            'Microsoft Azure RemoteApp',
+                            'Microsoft Azure Subscription Management',
+                            'Microsoft Cloud App Security',
+                            'Microsoft Commerce Tools Access Control Portal',
+                            'Microsoft Commerce Tools Authentication Service',
+                            'Microsoft Flow',
+                            'Microsoft Forms',
+                            'Microsoft Intune',
+                            'Microsoft Intune Enrollment',
+                            'Microsoft Planner',
+                            'Microsoft Power BI',
+                            'Microsoft PowerApps',
+                            'Microsoft Search in Bing',
+                            'Microsoft StaffHub',
+                            'Microsoft Stream',
+                            'Microsoft Teams',
+                            'Office 365 Exchange Online',
+                            'Office 365 SharePoint Online',
+                            'Office 365 Yammer',
+                            'Office Delve',
+                            'Office Sway',
+                            'Outlook Groups',
+                            'Project Online',
+                            'Skype for Business Online',
+                            'Virtual Private Network (VPN)',
+                            'Visual Studio App Center',
+                            'Windows Defender ATP')]
+            [string]$AppName,
+            [string]$Id,
+            [ValidateSet("All","Android","Ios","Windows","WindowsPhone","MacOs")][String]$Platform
+        )
+            
+    $PolicyList =""
+    $uri1  = $baseURI  
+    $PoliciesText = Invoke-WebRequest -UseBasicParsing -headers $authHeaders -Uri $uri1 -Method Get
+
+    ## by Policy ID return a JSON
+    ## Application Name Param is ignored
+    if (  ($ID.Length -gt 0) -and ($Type -eq "PolicyID") )
+    {
+
+        ##Override URI to a specific Policy
+        $PolicyID=$ID
+        $uri1  = $baseURI + "/" + $PolicyID
+        $PoliciesText = Invoke-WebRequest -UseBasicParsing -headers $authHeaders -Uri $uri1 -Method Get
+        $PolicyJSON  = ConvertFrom-Json $PoliciesText.Content
+        $PolicyJSONObject =$PolicyJSON | ConvertTo-Json -Depth 10  
+        $PolicyList= $PolicyJSONObject
+    }
+    
+    ## SearchAllPolicy by ApplicationID
+    if ( ($ID.Length -gt 0) -and ($Type -eq "ApplicationID") )
+    {
+        
+        $AppSevicePrincipal=$ID
+        CheckAppPrincipalInPolicy -PoliciesText $PoliciesText -AppSevicePrincipal  $AppSevicePrincipal
+    }
+
+        
+    ## SearchAllPolicy by ApplicationName
+    if ( ($AppName.Length -gt 0) -and ($Type -eq "ApplicationName") )
+    {
+            $AppSevicePrincipal=$ApplicatioNameHashTable["$AppName"]
+            $PolicyList = CheckAppPrincipalInPolicy -PoliciesText $PoliciesText -AppSevicePrincipal $AppSevicePrincipal
+            
+
+    }
+
+        
+    ## SearchAllPolicy by Platform
+    if ( ($Platform.Length -gt 0) -and ($Type -eq "Platform") )
+    {
+            
+            $PolicyList = CheckDeviceTypeInPolicy -PoliciesText $PoliciesText -Platform $Platform
+            
+
+    }
+
+
+ return $PolicyList
+
+    #$policiesJSONObject= $policiesJSON  | ConvertTo-Json -Depth 10 
+}
+
+
+function CheckAppPrincipalInPolicy
+{
+        Param(
+            [Parameter(mandatory=$true)]
+            [string]$PoliciesText,
+            [Parameter(mandatory=$true)]
+            [string]$AppSevicePrincipal
+
+        )
+
+            $PolicyObectList = [System.Collections.ArrayList]@();
+            $policiesJSONObject  = ConvertFrom-Json $PoliciesText
+            #$AppSevicePrincipal=$ApplicatioNameHashTable["$AppName"]
+            #$PolicyJSONObj.id
+
+             foreach($PolicyJSONObj in $policiesJSONObject.value)
+            {
+                $appPresent=$false
+                ##Write Logic for all Apps as well.
+                foreach( $includeAppSevicePrincipal in  $PolicyJSONObj.conditions.applications.includeapplications)
+                {
+                   if (($includeAppSevicePrincipal -eq $AppSevicePrincipal) -or ($includeAppSevicePrincipal -eq 'All'))
+                   {
+                    $appPresent=$true   
+                   }
+                }
+                 foreach( $excludeAppSevicePrincipal in  $PolicyJSONObj.conditions.applications.excludeapplications)
+                {
+                   if ( $excludeAppSevicePrincipal -eq $AppSevicePrincipal -or ($includeAppSevicePrincipal -eq 'All'))
+                   {
+                        $appPresent=$true   
+                   }
+                }
+
+            
+                if ($appPresent -eq $true)
+                {
+                    $returnObject = New-Object -TypeName psobject 
+                    $returnObject | Add-Member -MemberType NoteProperty -Name PolicyID -Value $PolicyJSONObj.id
+                    $returnObject | Add-Member -MemberType NoteProperty -Name PolicyName -Value $PolicyJSONObj.displayName
+                    ##Supress Index
+                    $retrunCode=$PolicyObectList.Add($returnObject) 
+                        
+                }
+
+    }
+                   
+ return $PolicyObectList
+}
+
+
+
+
+function CheckDeviceTypeInPolicy
+{
+        Param(
+            [Parameter(mandatory=$true)]
+            [string]$PoliciesText,
+            [Parameter(mandatory=$true)]
+            [ValidateSet("All","Android","Ios","Windows","WindowsPhone","MacOs")][String]$Platform
+
+        )
+
+            $PolicyObectList = [System.Collections.ArrayList]@();
+            $policiesJSONObject  = ConvertFrom-Json $PoliciesText
+            
+
+             foreach($PolicyJSONObj in $policiesJSONObject.value)
+            {
+                $devicePresent=$false
+                ##Write Logic for all Device as well.
+                foreach( $includePlatforms in  $PolicyJSONObj.conditions.platforms.includePlatforms)
+                {
+                   if (($includePlatforms -eq $Platform) -or ($includePlatforms -eq 'All'))
+                   {
+                    $appPresent=$true   
+                   }
+                }
+                 foreach( $excludePlatforms in  $PolicyJSONObj.conditions.platforms.excludePlatforms)
+                {
+                   if ( $excludePlatforms -eq $Platform -or ($excludePlatforms -eq 'All'))
+                   {
+                        $appPresent=$true   
+                   }
+                }
+
+            
+                if ($appPresent -eq $true)
+                {
+                    $returnObject = New-Object -TypeName psobject 
+                    $returnObject | Add-Member -MemberType NoteProperty -Name PolicyID -Value $PolicyJSONObj.id
+                    $returnObject | Add-Member -MemberType NoteProperty -Name PolicyName -Value $PolicyJSONObj.displayName
+                    ##Supress Index
+                    $retrunCode=$PolicyObectList.Add($returnObject) 
+                        
+                }
+
+    }
+                   
+ return $PolicyObectList
+}
+
+
+
+#Get-CAPolicyV2 -Type PolicyID -Id d7784eaf-8621-438b-860a-938c7b33130b
+#Get-CAPolicyV2 -Type ApplicationID -Id "00000002-0000-0ff1-ce00-000000000000"
+#Get-CAPolicyV2 -Type ApplicationName -AppName 'Office 365 SharePoint Online'
+#Get-CAPolicyV2 -Type Platform -Platform WindowsPhone
+
 function Start-CAPolicyBackup{
     ## This function will backup all the polcies to a JSON file
     
@@ -282,7 +526,15 @@ function Set-CAPolicy{
         }
         if($excludeGroups.length -ne 0)
         {
+            if($excludeGroups ="null")
+            {
+                   $conditionsSectionPolicyObject.users.excludeGroups = $null
+
+            }
+            else
+            {
             $conditionsSectionPolicyObject.users.excludeGroups = $excludeGroups
+            }
         }
         if($includeRoles.length -ne 0)
         {
@@ -316,7 +568,7 @@ function Set-CAPolicy{
         ## Operator
         if($accessGrantControlOperator.length -ne 0)
         {
-            $grantControlsSectionPolicyObject.operator = $accessGrantControlOperator
+            $grantControlsSectionPolicyObject.operator =    $accessGrantControlOperator
         }
 
         
@@ -339,11 +591,11 @@ function Set-CAPolicy{
 
  }
 
- Set-CAPolicy -PolicyID cb015840-1572-4ad2-853a-f2aa3bb648df -DisplayName "Tutor" `
- -excludeLocations none,wastech -includeLocations NALL -includeDeviceStates All  -excludeDeviceStates DomainJoined , Compliant `
- -State Disabled -signInRiskLevels High,Low -ClientAppsTypes Browser,EasUnsupported -includePlatforms Android,ios -excludePlatforms windows `
- -includeUsers "user1" ,"user2" -excludeUsers "user3","user4" -includeGroups "group1", "group2" -excludeGroups "exgroup1","exgroup2" -includeRoles "role1","role2" -excludeRoles "exrol1", "exrole2" `
- -accessGrantControls CompliantApplication,mfa -accessGrantControlOperator OR
+ #Set-CAPolicy -PolicyID cb015840-1572-4ad2-853a-f2aa3bb648df -DisplayName "Tutor" `
+ #-excludeLocations none,wastech -includeLocations NALL -includeDeviceStates All  -excludeDeviceStates DomainJoined , Compliant `
+ #-State Disabled -signInRiskLevels High,Low -ClientAppsTypes Browser,EasUnsupported -includePlatforms Android,ios -excludePlatforms windows `
+ #-includeUsers "user1" ,"user2" -excludeUsers "user3","user4" -includeGroups "group1", "group2" -excludeGroups null -includeRoles "role1","role2" -excludeRoles "exrol1", "exrole2" `
+ #-accessGrantControls CompliantApplication,mfa -accessGrantControlOperator OR
   
 
 
