@@ -410,7 +410,6 @@ return $result
   Displays a visual representation of a calendar.
 #>
 Export-ModuleMember -Function New-CAPolicy
-
 Export-ModuleMember -Function Start-CAPolicyBackup
 Export-ModuleMember -Function Start-CAPolicyRestore
 Export-ModuleMember -Function Get-CAPolicy
