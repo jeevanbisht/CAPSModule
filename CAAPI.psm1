@@ -23,7 +23,7 @@ $authHeaders.Add('Authorization', 'Bearer ' + $accessToken)
 $authHeaders.Add('Content-Type','application/json')
 $authHeaders.Add('Accept','application/json, text/plain')
 $baseURI = 'https://canary.graph.microsoft.com/testidentityprotectionservices/conditionalaccesspolicies'
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 
 
 
 
