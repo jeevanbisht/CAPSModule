@@ -40,7 +40,7 @@ function New-CAPolicy{
             [Parameter(mandatory=$true)]
             [ValidateSet("Enabled","Disabled")][String]$State,
             [ValidateSet("High","Medium","Low","None")][String[]]$signInRiskLevels,
-            [ValidateSet("Browser","Modern","EasSupported","EasUnsupported","None")][String[]]$clientAppTypes,
+            [ValidateSet("Browser","Modern","EasSupported","EasUnsupported","Other","None")][String[]]$clientAppTypes,
             [ValidateSet("All","Android","Ios","Windows","WindowsPhone","MacOs")][String[]]$includePlatforms,
             [ValidateSet("All","Android","Ios","Windows","WindowsPhone","MacOs")][String[]]$excludePlatforms,
             [String[]]$includeApplications,
