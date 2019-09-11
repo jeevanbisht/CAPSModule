@@ -297,7 +297,7 @@ function Get-CAPolicy {
 
     Param(
         [ValidateSet("PolicyID","PolicyName")][String[]]$Type,
-        [Parameter(mandatory=$true)]
+        [Parameter(mandatory=$false)]
         [string]$Id
     )
  
@@ -349,7 +349,17 @@ function Get-CAPolicy {
            }
         $result=$PolicyObectList
     }
-
+    else 
+    {
+            $PolicyURI       = $baseURI 
+            $PolicyJSON      = $null
+            $Response        = try { Invoke-WebRequest -UseBasicParsing -headers $authHeaders -Uri $PolicyURI -Method GET } catch { $_.Exception.Response}
+            $PoliciesText    = Invoke-WebRequest -UseBasicParsing -headers $authHeaders -Uri $PolicyURI -Method Get
+            $PolicyObectList = [System.Collections.ArrayList]@();
+            $policiesJSONObject  = ConvertFrom-Json $PoliciesText
+            $PolicyJSON = ConvertFrom-Json $response.Content
+            $result = $policiesJSONObject.value
+    }
  return $result
 }
 
