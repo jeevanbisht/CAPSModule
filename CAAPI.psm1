@@ -12,17 +12,17 @@
 #>
 
 
-$tenantDomain = 'consoto.com' #change your tenant domain
-$clientID = '95c29d23-ad47-4608-845e-4e370418ef05'  #change to your AppID
+$tenantDomain = 'contoso.com' #change your tenant domain
+$clientID = '95c29d23-ad47-4608-845e-4e370418ef01'  #change to your AppID
 
 Import-Module MSCloudIdUtils
 
-$accessToken = Get-MSCloudIdAccessTokenFromUser -TenantDomain $tenantDomain -ClientId $clientID -Resource 'https://canary.graph.microsoft.com' -RedirectUri 'urn:ietf:wg:oauth:2.0:oob' 
+$accessToken = Get-MSCloudIdAccessTokenFromUser -TenantDomain $tenantDomain -ClientId $clientID -Resource 'https://graph.microsoft.com' -RedirectUri 'urn:ietf:wg:oauth:2.0:oob' 
 $authHeaders = New-Object 'System.Collections.Generic.Dictionary[[String],[String]]'
 $authHeaders.Add('Authorization', 'Bearer ' + $accessToken)
 $authHeaders.Add('Content-Type','application/json')
 $authHeaders.Add('Accept','application/json, text/plain')
-$baseURI = 'https://canary.graph.microsoft.com/testidentityprotectionservices/conditionalaccesspolicies'
+$baseURI = 'https://graph.microsoft.com/beta/conditionalAccess/policies'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 
 
 
@@ -85,7 +85,7 @@ function New-CAPolicy{
             $applicationsObject | Add-Member -MemberType NoteProperty -Name "includeApplications" -Value $includeApplications
             if($excludeApplications.Length -le 0) { $excludeApplications = @() }
             $applicationsObject | Add-Member -MemberType NoteProperty -Name "excludeApplications" -Value $excludeApplications
-            $applicationsObject | Add-Member -MemberType NoteProperty -Name "includeAuthenticationContext" -Value @()
+            $applicationsObject | Add-Member -MemberType NoteProperty -Name "includeUserActions" -Value @()
 
 
             ## Platforms
@@ -419,6 +419,8 @@ return $result
    
 
 }
+
+
 
 Export-ModuleMember -Function New-CAPolicy
 Export-ModuleMember -Function Start-CAPolicyBackup
